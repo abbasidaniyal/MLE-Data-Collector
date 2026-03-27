@@ -33,11 +33,11 @@ class ZipExporter {
         if (fileEntity is! File) continue;
         if (!fileEntity.path.endsWith('.png')) continue;
         final fileName = fileEntity.path.split('/').last;
-        encoder.addFile(fileEntity, '$folderName/$fileName');
+        await encoder.addFile(fileEntity, '$folderName/$fileName');
       }
     }
 
-    encoder.close();
+    await encoder.close();
     return zipPath;
   }
 }
