@@ -156,7 +156,66 @@ class _CameraScreenState extends State<CameraScreen>
             child: !_isInitialized
                 ? const Center(
                     child: CircularProgressIndicator(color: Colors.white))
-                : CameraPreview(_controller!),
+                : Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      CameraPreview(_controller!),
+                      // Square crop overlay — shows exactly what will be saved
+                      LayoutBuilder(builder: (context, constraints) {
+                        final side = constraints.maxWidth < constraints.maxHeight
+                            ? constraints.maxWidth
+                            : constraints.maxHeight;
+                        final dx = (constraints.maxWidth - side) / 2;
+                        final dy = (constraints.maxHeight - side) / 2;
+                        return Stack(
+                          children: [
+                            // Dim areas outside the square
+                            if (dy > 0) ...[  
+                              Positioned(
+                                top: 0, left: 0, right: 0,
+                                height: dy,
+                                child: const ColoredBox(color: Color(0x88000000)),
+                              ),
+                              Positioned(
+                                bottom: 0, left: 0, right: 0,
+                                height: dy,
+                                child: const ColoredBox(color: Color(0x88000000)),
+                              ),
+                            ],
+                            if (dx > 0) ...[  
+                              Positioned(
+                                left: 0, top: 0, bottom: 0,
+                                width: dx,
+                                child: const ColoredBox(color: Color(0x88000000)),
+                              ),
+                              Positioned(
+                                right: 0, top: 0, bottom: 0,
+                                width: dx,
+                                child: const ColoredBox(color: Color(0x88000000)),
+                              ),
+                            ],
+                            // Corner brackets
+                            Positioned(
+                              left: dx, top: dy,
+                              child: _CornerBracket(corner: _Corner.topLeft, size: 24),
+                            ),
+                            Positioned(
+                              right: dx, top: dy,
+                              child: _CornerBracket(corner: _Corner.topRight, size: 24),
+                            ),
+                            Positioned(
+                              left: dx, bottom: dy,
+                              child: _CornerBracket(corner: _Corner.bottomLeft, size: 24),
+                            ),
+                            Positioned(
+                              right: dx, bottom: dy,
+                              child: _CornerBracket(corner: _Corner.bottomRight, size: 24),
+                            ),
+                          ],
+                        );
+                      }),
+                    ],
+                  ),
           ),
           Container(
             color: Colors.black,
@@ -241,4 +300,55 @@ class _CameraScreenState extends State<CameraScreen>
       ),
     );
   }
+}
+
+enum _Corner { topLeft, topRight, bottomLeft, bottomRight }
+
+class _CornerBracket extends StatelessWidget {
+  final _Corner corner;
+  final double size;
+  const _CornerBracket({required this.corner, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: Size(size, size),
+      painter: _CornerPainter(corner),
+    );
+  }
+}
+
+class _CornerPainter extends CustomPainter {
+  final _Corner corner;
+  _CornerPainter(this.corner);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.square;
+
+    final w = size.width;
+    final h = size.height;
+
+    switch (corner) {
+      case _Corner.topLeft:
+        canvas.drawLine(Offset(0, h), Offset(0, 0), paint);
+        canvas.drawLine(Offset(0, 0), Offset(w, 0), paint);
+      case _Corner.topRight:
+        canvas.drawLine(Offset(0, 0), Offset(w, 0), paint);
+        canvas.drawLine(Offset(w, 0), Offset(w, h), paint);
+      case _Corner.bottomLeft:
+        canvas.drawLine(Offset(0, 0), Offset(0, h), paint);
+        canvas.drawLine(Offset(0, h), Offset(w, h), paint);
+      case _Corner.bottomRight:
+        canvas.drawLine(Offset(w, 0), Offset(w, h), paint);
+        canvas.drawLine(Offset(w, h), Offset(0, h), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_CornerPainter old) => old.corner != corner;
 }

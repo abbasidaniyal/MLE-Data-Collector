@@ -52,7 +52,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete image?'),
-        content: Text('Delete ${file.path.split('/').last} from $folder?'),
+        content: Text('Delete ${file.path.split('/').last} from $folder?');
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),

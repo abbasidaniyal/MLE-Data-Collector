@@ -33,12 +33,20 @@ class ImageSaver {
   }
 }
 
-/// Runs in an isolate: decode JPEG, resize to 128x128, encode as RGB PNG.
+/// Runs in an isolate: decode JPEG, center-crop to square, resize to 128x128, encode as RGB PNG.
 Uint8List _processImage(Uint8List inputBytes) {
   final decoded = img.decodeImage(inputBytes);
   if (decoded == null) throw Exception('Could not decode image');
+
+  // Center-crop to square so nothing is stretched
+  final size = decoded.width < decoded.height ? decoded.width : decoded.height;
+  final cropX = (decoded.width - size) ~/ 2;
+  final cropY = (decoded.height - size) ~/ 2;
+  final cropped =
+      img.copyCrop(decoded, x: cropX, y: cropY, width: size, height: size);
+
   final resized = img.copyResize(
-    decoded,
+    cropped,
     width: 128,
     height: 128,
     interpolation: img.Interpolation.linear,
